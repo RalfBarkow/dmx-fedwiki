@@ -1,0 +1,19 @@
+{
+  "name": "dmx-fedwiki",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://dreyeck.freedombox.rocks/gitweb/dmx-fedwiki.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "wiki-client": "^0.31.1"
+  }
+}

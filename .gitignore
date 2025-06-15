@@ -2,3 +2,4 @@
 .idea
 target
 dmx-fedwiki.iml
+node_modules
