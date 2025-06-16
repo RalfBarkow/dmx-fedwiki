@@ -1,16 +1,11 @@
 // dmx-fedwiki-plugin.js
 // FedWiki client‑side plugin to fetch the sitemap and send it to DMX
 
-// 1) Expose jQuery + jQuery‑UI globally for legacy code
-import $ from 'jquery';
-window.$ = window.jQuery = $;
-import 'jquery-ui-dist/jquery-ui.js';
-
-// 2) Import your own wiki adapter, not wiki-client
+// 1) Import your own wiki adapter, not wiki-client
 import wiki from 'wiki-client/lib/wiki.js';
 window.wiki = wiki;
 
-// Define origin explicitly — point to the correct FedWiki server
+// 2) Define origin explicitly — point to the correct FedWiki server
 wiki.origin = 'http://localhost:3000/';
 
 // 3) Add a Promise‑based .sitemap() helper on your legacy wiki
