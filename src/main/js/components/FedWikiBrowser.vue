@@ -23,6 +23,7 @@ export default {
     error()     { return this.$store.getters['fedwiki/getError']; },
     // Normalize to [{slug, title?}, …]
     normalizedSitemap() {
+      console.log('Raw sitemap data:', this.sitemap);
       return this.sitemap.map(it => {
         if (typeof it === 'string') return { slug: it };
         // common fedwiki sitemap shapes: {slug, title?, …}
