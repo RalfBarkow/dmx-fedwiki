@@ -1,0 +1,50 @@
+{
+  "topic_types": [
+    {
+      "value": "FedWiki Title",
+      "uri": "dmx.fedwiki.title",
+      "dataTypeUri": "dmx.core.text"
+    },
+    {
+      "value": "FedWiki Story (JSON)",
+      "uri": "dmx.fedwiki.story",
+      "dataTypeUri": "dmx.core.text",
+      "viewConfigTopics": [
+        {
+          "typeUri": "dmx.webclient.view_config",
+          "children": { "dmx.webclient.rows": 24 }
+        }
+      ]
+    },
+    {
+      "value": "FedWiki Journal (JSON)",
+      "uri": "dmx.fedwiki.journal",
+      "dataTypeUri": "dmx.core.text",
+      "viewConfigTopics": [
+        {
+          "typeUri": "dmx.webclient.view_config",
+          "children": { "dmx.webclient.rows": 24 }
+        }
+      ]
+    },
+    {
+      "value": "FedWiki Page",
+      "uri": "dmx.fedwiki.page",
+      "dataTypeUri": "dmx.core.entity",
+      "compDefs": [
+        { "childTypeUri": "dmx.fedwiki.title",   "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "dmx.fedwiki.story",   "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "dmx.fedwiki.journal", "childCardinalityUri": "dmx.core.one" }
+      ],
+      "viewConfigTopics": [
+        {
+          "typeUri": "dmx.webclient.view_config",
+          "children": {
+            "dmx.webclient.icon": "\\uf02d",
+            "dmx.webclient.add_to_create_menu": true
+          }
+        }
+      ]
+    }
+  ]
+}

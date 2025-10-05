@@ -4,7 +4,7 @@
 export default ({dmx, axios, Vue}) => ({
 
   state: {
-    buttonLabel: "Zettel",
+    buttonLabel: "Federated Wiki Zettel",
     zettelCount: 0
   },
 
