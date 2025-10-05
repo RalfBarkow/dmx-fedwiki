@@ -1,44 +1,50 @@
 // dmx-fedwiki-plugin.js
-// FedWiki client‑side plugin to fetch the sitemap and send it to DMX
+// Refactored FedWiki integration for DMX
 
-// 1) Import your own wiki adapter, not the npm wiki-client
-import wiki from 'wiki-client/lib/wiki.js';
-window.wiki = wiki;
-
-// 2) Define origin explicitly — point to the correct FedWiki server
-wiki.origin = 'http://localhost:3000/';
-
-// 3) Add a Promise‑based .sitemap() helper using fetch
-wiki.sitemap = () => {
-  const url = `${wiki.origin}system/sitemap.json`;
-  return fetch(url)
-    .then(response => {
-      if (!response.ok) throw new Error(`Failed to fetch sitemap: ${response.status}`);
-      return response.json();
-    })
-    .then(page => page.data || page);
+// FedWiki API helper using native fetch
+const fedwiki = {
+  origin: 'http://localhost:3000/',
+  
+  sitemap() {
+    const url = `${this.origin}system/sitemap.json`;
+    return fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error(`Failed to fetch sitemap: ${response.status}`);
+        return response.json();
+      })
+      .then(data => data.data || data);
+  },
+  
+  page(slug) {
+    const url = `${this.origin}${slug}.json`;
+    return fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error(`Failed to fetch page: ${response.status}`);
+        return response.json();
+      });
+  }
 };
 
-// 4) Export the DMX plugin factory
 export default function FedWikiPlugin({ store, dmx, axios, Vue }) {
-  // 4a) Register a Vuex store module under 'greeting'
-  store.registerModule('greeting', require('./greeting').default);
-
-  // 4b) Initialize the sitemap in store
-  store.dispatch('greeting/setSitemap', []);
-  wiki.sitemap()
-    .then(slugs => store.dispatch('greeting/setSitemap', slugs))
-    .catch(err => console.error('sitemap() error', err));
-
-  // 4c) Provide components
+  // Register Vuex store module
+  store.registerModule('fedwiki', require('./fedwiki-store').default);
+  
+  // Initialize with empty sitemap
+  store.dispatch('fedwiki/setSitemap', []);
+  
+  // Fetch sitemap and update store
+  fedwiki.sitemap()
+    .then(slugs => store.dispatch('fedwiki/setSitemap', slugs))
+    .catch(err => console.error('Failed to fetch sitemap:', err));
+  
   return {
     storeModule: {
-      name: 'greeting',
-      module: require('./greeting').default
+      name: 'fedwiki',
+      module: require('./fedwiki-store').default
     },
     components: [
       {
-        comp: require('./components/Greeting').default,
+        comp: require('./components/FedWikiBrowser').default,
         mount: 'toolbar-left'
       }
     ]
