@@ -6,8 +6,18 @@
       "dataTypeUri": "dmx.core.text"
     },
     {
-      "value": "Title",
+      "value": "Title", 
       "uri": "fedwiki.title",
+      "dataTypeUri": "dmx.core.text"
+    },
+    {
+      "value": "Date",
+      "uri": "fedwiki.date", 
+      "dataTypeUri": "dmx.core.text"
+    },
+    {
+      "value": "Synopsis",
+      "uri": "fedwiki.synopsis",
       "dataTypeUri": "dmx.core.text"
     },
     {
@@ -20,8 +30,8 @@
       "uri": "fedwiki.page",
       "dataTypeUri": "dmx.core.entity",
       "compDefs": [
-        { "childTypeUri": "fedwiki.slug",      "childCardinalityUri": "dmx.core.one" },
-        { "childTypeUri": "fedwiki.title",     "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "fedwiki.slug", "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "fedwiki.title", "childCardinalityUri": "dmx.core.one" },
         { "childTypeUri": "fedwiki.page.json", "childCardinalityUri": "dmx.core.one" }
       ],
       "viewConfigTopics": [
@@ -35,10 +45,30 @@
       ]
     },
     {
+      "value": "FedWiki Sitemap Entry",
+      "uri": "fedwiki.sitemap.entry",
+      "dataTypeUri": "dmx.core.entity", 
+      "compDefs": [
+        { "childTypeUri": "fedwiki.slug", "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "fedwiki.title", "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "fedwiki.date", "childCardinalityUri": "dmx.core.one" },
+        { "childTypeUri": "fedwiki.synopsis", "childCardinalityUri": "dmx.core.one" }
+      ],
+      "viewConfigTopics": [
+        {
+          "typeUri": "dmx.webclient.view_config", 
+          "children": {
+            "dmx.webclient.icon": "\\uf03a"
+          }
+        }
+      ]
+    },
+    {
       "value": "FedWiki Sitemap",
       "uri": "fedwiki.sitemap",
       "dataTypeUri": "dmx.core.entity",
       "compDefs": [
+        { "childTypeUri": "fedwiki.sitemap.entry", "childCardinalityUri": "dmx.core.many" },
         { "childTypeUri": "fedwiki.slug", "childCardinalityUri": "dmx.core.many" }
       ],
       "viewConfigTopics": [
