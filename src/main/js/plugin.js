@@ -24,23 +24,31 @@ export default ({ store, axios: http, dmx, Vue }) => {
           {
             label: 'Use localhost:3000 as FedWiki site',
             handler: () => {
-              console.debug(TAG, 'ctx:setSiteBase', { url: 'http://localhost:3000' });
-              store.dispatch('fedwiki/setSiteBase', 'http://localhost:3000');
+              const url = 'http://localhost:3000';
+              console.debug(TAG, 'ctx:setSiteBase', { url });
+              store.dispatch('fedwiki/setSiteBase', url);
             }
           },
           {
             label: 'Materialize FedWiki Pages',
             handler: async () => {
-              if (!slugs.length) return;
+              if (!slugs.length) {
+                console.debug(TAG, 'materialize:skip', { reason: 'no slugs' });
+                return;
+              }
+
               console.debug(TAG, 'materialize:start', { count: slugs.length });
 
               const CHUNK_SIZE = 10;
-              let ok = 0, fail = 0;
+              let ok = 0;
+              let fail = 0;
 
               for (let i = 0; i < slugs.length; i += CHUNK_SIZE) {
                 const batch = slugs.slice(i, i + CHUNK_SIZE);
+
                 const promises = batch.map(slug =>
-                  dmx.rpc.createTopic({
+                  // IMPORTANT: use high-level helper, not dmx.rpc.createTopic
+                  dmx.createTopic({
                     typeUri: 'fedwiki.page',
                     children: {
                       'fedwiki.slug': slug,
@@ -48,22 +56,30 @@ export default ({ store, axios: http, dmx, Vue }) => {
                       'fedwiki.page.json': ''
                     }
                   })
-                  .then(() => { ok++; })
+                  .then(() => {
+                    ok++;
+                    console.debug(TAG, 'materialize:item-ok', { slug });
+                  })
                   .catch(err => {
                     fail++;
-                    console.warn(TAG, 'materialize:item-fail', slug, err);
+                    console.warn(TAG, 'materialize:item-fail', { slug, err });
                   })
                 );
 
                 await Promise.all(promises);
+
+                // small throttle to avoid hammering the backend
                 if (i + CHUNK_SIZE < slugs.length) {
                   await new Promise(r => setTimeout(r, 100));
                 }
               }
 
               console.debug(TAG, 'materialize:done', { ok, fail });
+
               if (dmx?.notify?.info) {
-                dmx.notify.info(`FedWiki: created ${ok} pages${fail ? `, ${fail} failed` : ''}`);
+                dmx.notify.info(
+                  `FedWiki: created ${ok} pages${fail ? `, ${fail} failed` : ''}`
+                );
               }
             }
           }
@@ -92,15 +108,17 @@ export default ({ store, axios: http, dmx, Vue }) => {
           label: 'FedWiki',
           weight: 50,
           when: ({ topic }) => isSitemap(topic),
-          mount(el, { topic }) { this._vm = mountVue(el, topic); },
-          update(el, { topic }) { 
-            if (this._vm) this._vm.currentTopic = topic; 
+          mount(el, { topic }) {
+            this._vm = mountVue(el, topic);
           },
-          unmount() { 
-            if (this._vm) { 
-              this._vm.$destroy(); 
-              this._vm = null; 
-            } 
+          update(el, { topic }) {
+            if (this._vm) this._vm.currentTopic = topic;
+          },
+          unmount() {
+            if (this._vm) {
+              this._vm.$destroy();
+              this._vm = null;
+            }
           }
         });
       } else if (dmx?.panel?.register) {
@@ -110,15 +128,17 @@ export default ({ store, axios: http, dmx, Vue }) => {
           label: 'FedWiki',
           weight: 50,
           when: topic => isSitemap(topic),
-          render(el, topic) { this._vm = mountVue(el, topic); },
-          update(el, topic) { 
-            if (this._vm) this._vm.currentTopic = topic; 
+          render(el, topic) {
+            this._vm = mountVue(el, topic);
           },
-          destroy() { 
-            if (this._vm) { 
-              this._vm.$destroy(); 
-              this._vm = null; 
-            } 
+          update(el, topic) {
+            if (this._vm) this._vm.currentTopic = topic;
+          },
+          destroy() {
+            if (this._vm) {
+              this._vm.$destroy();
+              this._vm = null;
+            }
           }
         });
       } else {
