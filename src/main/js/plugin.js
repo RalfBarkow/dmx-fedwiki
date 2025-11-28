@@ -24,57 +24,62 @@ export default ({ store, axios: http, dmx, Vue }) => {
           {
             label: 'Use localhost:3000 as FedWiki site',
             handler: () => {
-              console.debug(TAG, 'ctx:setSiteBase', { url: 'http://localhost:3000' });
-              store.dispatch('fedwiki/setSiteBase', 'http://localhost:3000');
+              const url = 'http://localhost:3000';
+              console.debug(TAG, 'ctx:setSiteBase', { url });
+              store.dispatch('fedwiki/setSiteBase', url);
             }
           },
           {
-            label: 'Materialize FedWiki Pages (with titles & dates)',
+            label: 'Materialize FedWiki Pages',
             handler: async () => {
-              const items = store.state.fedwiki.sitemap || [];
-              if (!items.length) {
-                dmx.notify?.info?.('No pages to materialize');
+              if (!slugs.length) {
+                console.debug(TAG, 'materialize:skip', { reason: 'no slugs' });
                 return;
               }
 
-              console.debug(TAG, 'materialize:start', { count: items.length });
-              const CHUNK_SIZE = 10;
-              let ok = 0, fail = 0;
+              console.debug(TAG, 'materialize:start', { count: slugs.length });
 
-              for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-                const batch = items.slice(i, i + CHUNK_SIZE);
-                const promises = batch.map(item => {
-                  // Include date in the created topic if available
-                  const children = {
-                    'fedwiki.slug': item.slug,
-                    'fedwiki.title': item.title || item.slug
-                  };
-                  
-                  // Only add date if we have a valid timestamp
-                  if (item.dateMs && Number.isFinite(item.dateMs)) {
-                    children['fedwiki.date'] = String(item.dateMs);
-                  }
-                  
-                  return dmx.rpc.createTopic({
+              const CHUNK_SIZE = 10;
+              let ok = 0;
+              let fail = 0;
+
+              for (let i = 0; i < slugs.length; i += CHUNK_SIZE) {
+                const batch = slugs.slice(i, i + CHUNK_SIZE);
+
+                const promises = batch.map(slug =>
+                  // IMPORTANT: use high-level helper, not dmx.rpc.createTopic
+                  dmx.createTopic({
                     typeUri: 'fedwiki.page',
-                    children
+                    children: {
+                      'fedwiki.slug': slug,
+                      'fedwiki.title': slug,
+                      'fedwiki.page.json': ''
+                    }
                   })
-                  .then(() => { ok++; })
+                  .then(() => {
+                    ok++;
+                    console.debug(TAG, 'materialize:item-ok', { slug });
+                  })
                   .catch(err => {
                     fail++;
-                    console.warn(TAG, 'materialize:item-fail', item.slug, err);
-                  });
-                });
+                    console.warn(TAG, 'materialize:item-fail', { slug, err });
+                  })
+                );
 
                 await Promise.all(promises);
-                if (i + CHUNK_SIZE < items.length) {
+
+                // small throttle to avoid hammering the backend
+                if (i + CHUNK_SIZE < slugs.length) {
                   await new Promise(r => setTimeout(r, 100));
                 }
               }
 
               console.debug(TAG, 'materialize:done', { ok, fail });
+
               if (dmx?.notify?.info) {
-                dmx.notify.info(`FedWiki: created ${ok} pages${fail ? `, ${fail} failed` : ''}`);
+                dmx.notify.info(
+                  `FedWiki: created ${ok} pages${fail ? `, ${fail} failed` : ''}`
+                );
               }
             }
           }
@@ -87,16 +92,14 @@ export default ({ store, axios: http, dmx, Vue }) => {
   try {
     const Comp = require('./components/FedWikiBrowser').default;
 
-    const mountVue = (el, topic) => {
-      const safeTopic = topic || {};
-      return new Vue({
+    const mountVue = (el, topic) =>
+      new Vue({
         store,
-        data: { currentTopic: safeTopic },
+        data: { currentTopic: topic },
         render(h) {
           return h(Comp, { props: { topic: this.currentTopic } });
         }
       }).$mount(el);
-    };
 
     const register = () => {
       if (dmx?.ui?.registerDetailTab) {
@@ -105,17 +108,17 @@ export default ({ store, axios: http, dmx, Vue }) => {
           label: 'FedWiki',
           weight: 50,
           when: ({ topic }) => isSitemap(topic),
-          mount(el, { topic }) { 
-            this._vm = mountVue(el, topic); 
+          mount(el, { topic }) {
+            this._vm = mountVue(el, topic);
           },
-          update(el, { topic }) { 
-            if (this._vm) this._vm.currentTopic = topic || {}; 
+          update(el, { topic }) {
+            if (this._vm) this._vm.currentTopic = topic;
           },
-          unmount() { 
-            if (this._vm) { 
-              this._vm.$destroy(); 
-              this._vm = null; 
-            } 
+          unmount() {
+            if (this._vm) {
+              this._vm.$destroy();
+              this._vm = null;
+            }
           }
         });
       } else if (dmx?.panel?.register) {
@@ -125,17 +128,17 @@ export default ({ store, axios: http, dmx, Vue }) => {
           label: 'FedWiki',
           weight: 50,
           when: topic => isSitemap(topic),
-          render(el, topic) { 
-            this._vm = mountVue(el, topic); 
+          render(el, topic) {
+            this._vm = mountVue(el, topic);
           },
-          update(el, topic) { 
-            if (this._vm) this._vm.currentTopic = topic || {}; 
+          update(el, topic) {
+            if (this._vm) this._vm.currentTopic = topic;
           },
-          destroy() { 
-            if (this._vm) { 
-              this._vm.$destroy(); 
-              this._vm = null; 
-            } 
+          destroy() {
+            if (this._vm) {
+              this._vm.$destroy();
+              this._vm = null;
+            }
           }
         });
       } else {
